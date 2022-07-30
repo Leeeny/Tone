@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>CONGRATULATION</title>
+</head>
+<body>
+<h2>Welcome</h2>
+<span th:if="${user.hasRole('ROLE_ADMIN')}">ADMIN</span>
+<span th:if="${user.hasRole('ROLE_USER')}">USER</span>
+</body>
+</html>

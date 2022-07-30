@@ -1,16 +1,14 @@
 package com.example.tone.controller;
 
 import com.example.tone.config.jwt.JwtUtils;
-import com.example.tone.entities.ERole;
-import com.example.tone.entities.Role;
 import com.example.tone.entities.User;
 import com.example.tone.pojo.JwtResponse;
 import com.example.tone.pojo.LoginRequest;
-import com.example.tone.pojo.MessageResponse;
-import com.example.tone.pojo.RegistrationRequest;
+import com.example.tone.pojo.UserDto;
 import com.example.tone.repository.RoleRepository;
 import com.example.tone.repository.UserRepository;
 import com.example.tone.service.UserDetailsImpl;
+import com.example.tone.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,15 +16,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-@RestController
-@RequestMapping("/auth")
+@Controller
 public class AuthenticationController {
     @Autowired
     AuthenticationManager authenticationManager;
@@ -39,6 +37,9 @@ public class AuthenticationController {
 
     @Autowired
     PasswordEncoder passwordEncoder;
+
+    @Autowired
+    UserService userService;
 
     @Autowired
     JwtUtils jwtUtils;
@@ -65,54 +66,28 @@ public class AuthenticationController {
                 roles));
     }
 
+    @RequestMapping("/login")
+    public String login() {
+        return "login";
+    }
+
+    @RequestMapping("/index")
+    public String index(Model model) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow(() -> new Exception("User not found"));
+        model.addAttribute("user", user);
+        return "index";
+    }
+
+    @GetMapping("/register")
+    public String getRegisterPage() {
+        return "register";
+    }
+
     @PostMapping("/register")
-    public ResponseEntity<MessageResponse> registerUser(@RequestBody RegistrationRequest registrationRequest) {
-        if (userRepository.existsByUsername(registrationRequest.getUsername())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Username is exist"));
-        }
-        User user = new User(registrationRequest.getUsername(),
-                passwordEncoder.encode(registrationRequest.getPassword()));
-
-        Set<String> reqRoles = registrationRequest.getRole();
-        System.out.println(reqRoles);
-        Set<Role> roles = new HashSet<>();
-
-
-        if (reqRoles == null) {
-            Role userRole = roleRepository
-                    .findByName(ERole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error, Role USER is not found"));
-            roles.add(userRole);
-        } else {
-            reqRoles.forEach(r -> {
-                switch (r) {
-                    case "admin":
-                        Role adminRole = roleRepository
-                                .findByName(ERole.ROLE_ADMIN)
-                                .orElseThrow(() -> new RuntimeException("Error, Role ADMIN is not found"));
-                        roles.add(adminRole);
-
-                        break;
-                    case "mod":
-                        Role modRole = roleRepository
-                                .findByName(ERole.ROLE_MODERATOR)
-                                .orElseThrow(() -> new RuntimeException("Error, Role MODERATOR is not found"));
-                        roles.add(modRole);
-
-                        break;
-
-                    default:
-                        Role userRole = roleRepository
-                                .findByName(ERole.ROLE_USER)
-                                .orElseThrow(() -> new RuntimeException("Error, Role USER is not found"));
-                        roles.add(userRole);
-                }
-            });
-        }
-        user.setRoles(roles);
-        userRepository.save(user);
-        return ResponseEntity.ok(new MessageResponse("User CREATED"));
+    public String postRegisterPage(UserDto userDto) {
+        System.out.println(userDto);
+        userService.registerNewUserAccount(userDto);
+        return "login";
     }
 }

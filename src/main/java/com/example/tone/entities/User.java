@@ -3,6 +3,7 @@ package com.example.tone.entities;
 import lombok.*;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
@@ -14,7 +15,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @ToString
-public class User {
+public class User implements Serializable {
     @Id
     @SequenceGenerator(name = "user_id", sequenceName = "user_id", allocationSize = 1)
     @GeneratedValue(generator = "user_id", strategy = GenerationType.IDENTITY)
@@ -31,5 +32,14 @@ public class User {
     public User(String username, String password) {
         this.username = username;
         this.password = password;
+    }
+
+    public boolean hasRole(String roleStr) {
+        for (Role role:
+             roles) {
+            if(role.getName().equals(ERole.valueOf(roleStr)))
+                return true;
+        };
+        return false;
     }
 }
